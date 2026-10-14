@@ -1841,7 +1841,7 @@ class PlayState extends MusicBeatState
 				
 				final skin = daNote.skin;
 				
-				final visPos = ((daNote.visualTime - Conductor.visualPosition) * songSpeed);
+				final visPos = ((daNote.visualTime - Conductor.visualPosition) * songSpeed) * daNote.multSpeed;
 				final diff = (daNote.strumTime - Conductor.songPosition);
 				
 				final pos = modManager.getPos(daNote.strumTime, visPos, diff, curDecBeat, daNote.noteData, daNote.lane, daNote, _modchartVector);

@@ -1,0 +1,210 @@
+name: Nightly Builds
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      buildFlags:
+        required: false
+        type: string
+
+env:
+  HAXE_VER: 4.3.7
+  LIME_HASH: 6421de16b9dfa4fb55c19f12db65d392a57585c8
+
+jobs:
+  Android:
+    name: Build Android
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc-13
+      CXX: g++-13
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
+        with:
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Install Linux system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
+            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
+            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
+            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
+            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
+            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
+            libvulkan-dev pkg-config
+
+      - name: Prepare Android Lime rebuild
+        run: |
+          set -euo pipefail
+          haxelib setup ~/haxelib
+          haxelib install hxcpp > /dev/null --quiet
+          haxelib install hxpkg --quiet
+          haxelib run hxpkg install
+          rm -rf .haxelib/lime
+          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          git -C .haxelib/lime/git submodule update --init --recursive --force
+          haxelib dev lime .haxelib/lime/git
+          
+      - name: Rebuild Linux Lime ndll
+        run: |
+          haxelib run lime rebuild cpp -release
+          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
+            echo "ERROR: Missing Lime ndll"
+            exit 1
+          fi
+          
+      - name: Configure Android
+        run: |
+          haxelib run lime setup android
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_SETUP true
+
+      - name: Rebuild Android Lime so
+        run: |
+          haxelib run lime rebuild android -release
+          if [ ! -f .haxelib/lime/git/ndll/Android/liblime-64.so ]; then
+            echo "ERROR: Missing Liblime 64 so"
+            exit 1
+          fi
+
+      - name: Compile
+        run: haxelib run lime build android -final -D ${{ inputs.buildFlags }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: NightmareVision (Android)
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  Windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+        with:
+          submodules: true
+          
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
+        with:
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Prepare Windows Lime rebuild
+        shell: pwsh
+        run: |
+          function Run {
+            $exe = $args[0]
+            $cmdArgs = @()
+            if ($args.Length -gt 1) {
+              $cmdArgs = $args[1..($args.Length - 1)]
+            }
+            Write-Host ">>> $exe $($cmdArgs -join ' ')"
+            & $exe @cmdArgs
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Command failed with exit code ${LASTEXITCODE}: $exe $($cmdArgs -join ' ')"
+              exit $LASTEXITCODE
+            }
+          }
+          Run haxelib setup C:/haxelib
+          Run haxelib install hxcpp --quiet
+          Run haxelib install hxpkg --quiet
+          Run haxelib run hxpkg install
+          if (Test-Path .haxelib/lime) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime
+          }
+          Run git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          Run git -C .haxelib/lime/git fetch --all --tags --prune
+          Run git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          Run git -C .haxelib/lime/git submodule sync --recursive
+          Run git -C .haxelib/lime/git submodule update --init --recursive --force
+          Run haxelib dev lime .haxelib/lime/git
+          if (Test-Path .haxelib/lime/git/project/obj) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/project/obj
+          }
+          if (Test-Path .haxelib/lime/git/ndll) {
+            Remove-Item -Recurse -Force -LiteralPath .haxelib/lime/git/ndll
+          }
+          Run haxelib path lime
+          Run haxelib run lime rebuild cpp -release
+
+      - name: Build Windows
+        run: haxelib run lime build windows -D ${{ inputs.buildFlags }}
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: NightmareVision (Windows)
+          path: export/release/windows/bin
+
+  Linux:
+    name: Build Linux
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc-13
+      CXX: g++-13
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v2.1.0
+        with:
+          haxe-version: ${{ env.HAXE_VER }}
+
+      - name: Install Linux system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc-13 g++-13 vlc libvlc-dev libvlccore-dev vlc-bin \
+            libwayland-dev libwayland-bin wayland-protocols libasound2-dev \
+            libpulse-dev libjack-jackd2-dev libpipewire-0.3-dev libgl1-mesa-dev \
+            libegl1-mesa-dev libglu1-mesa-dev libdbus-1-dev libudev-dev \
+            libxkbcommon-dev libx11-dev libxext-dev libx11-xcb-dev libxfixes-dev \
+            libxss-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxinerama-dev libxxf86vm-dev libgbm-dev libdrm-dev libdecor-0-dev \
+            libvulkan-dev pkg-config
+
+      - name: Prepare Linux Lime rebuild
+        run: |
+          set -euo pipefail
+          haxelib setup ~/haxelib
+          haxelib install hxcpp > /dev/null --quiet
+          haxelib install hxpkg --quiet
+          haxelib run hxpkg install
+          rm -rf .haxelib/lime
+          git clone https://github.com/FunkinCrew/lime .haxelib/lime/git
+          git -C .haxelib/lime/git checkout ${{ env.LIME_HASH }}
+          git -C .haxelib/lime/git submodule update --init --recursive --force
+          haxelib dev lime .haxelib/lime/git
+
+      - name: Rebuild Linux Lime ndll
+        run: |
+          haxelib run lime rebuild cpp -release
+          if [ ! -f .haxelib/lime/git/ndll/Linux64/lime.ndll ]; then
+            echo "ERROR: Missing Lime ndll"
+            exit 1
+          fi
+
+      - name: Build Linux
+        run: haxelib run lime build Project.xml linux -D ${{ inputs.buildFlags }}
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: NightmareVision (Linux)
+          path: export/release/linux/bin

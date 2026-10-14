@@ -443,12 +443,18 @@ class Paths
 	
 	/**
 	 * Removes all non alpha numeric chars and replaces spaces with `-` to lower in a given String.
+     * Removes trailing `.` characters since the Windows OS does not allow you to end a folder name with a `.`
 	 * 
-	 * Example: My Song Path! == my-song-path
+	 * ex: 
+        My Song Path! == my-song-path
+        MY SONG PATH... == my-song-path
 	 */
 	public static inline function sanitize(path:String):String
 	{
-		return ~/[^- a-zA-Z0-9..\/]+\//g.replace(path, '').replace(' ', '-').trim().toLowerCase();
+		var ret = ~/[^- a-zA-Z0-9..\/]+\//g.replace(path, '').replace(' ', '-').trim().toLowerCase();
+		while(ret.endsWith('.')) ret = ret.substr(0, ret.length - 1);
+
+		return ret;
 	}
 	
 	/**

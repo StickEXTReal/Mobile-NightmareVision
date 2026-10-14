@@ -32,6 +32,8 @@ class ModManager implements IFlxDestroyable
 			FlipModifier,
 			InvertModifier,
 			DrunkModifier,
+            SpiralModifier,
+            TornadoModifier,
 			BeatModifier,
 			AlphaModifier,
 			ReceptorScrollModifier,
@@ -50,6 +52,8 @@ class ModManager implements IFlxDestroyable
 		quickRegister(new LocalRotateModifier(this, 'local'));
 		quickRegister(new SubModifier("noteSpawnTime", this));
 		setValue("noteSpawnTime", 2000);
+
+        // le scroll speed
 		setValue("xmod", 1);
 		for (i in 0...PlayState.SONG.keys)
 			setValue('xmod$i', 1);

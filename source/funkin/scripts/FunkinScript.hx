@@ -292,6 +292,7 @@ class FunkinScript extends IrisEx implements IFlxDestroyable
 		set("FlxTextAlign", funkin.utils.MacroUtil.buildAbstract(flixel.text.FlxText.FlxTextAlign));
 		set('FlxAxes', funkin.utils.MacroUtil.buildAbstract(flixel.util.FlxAxes));
 		set("FlxKey", funkin.utils.MacroUtil.buildAbstract(flixel.input.keyboard.FlxKey));
+        set("FlxGamepadInputID", funkin.utils.MacroUtil.buildAbstract(flixel.input.gamepad.FlxGamepadInputID));
 		set('BlendMode', funkin.utils.MacroUtil.buildAbstract(openfl.display.BlendMode));
 		
 		set("keyToString", (key:Int) -> {

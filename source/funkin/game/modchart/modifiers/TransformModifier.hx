@@ -21,12 +21,25 @@ class TransformModifier extends NoteModifier
 		pos.y += getSubmodValue('transform${data}Y', player) + getSubmodValue('transform${data}Y-a', player);
 		pos.z += getSubmodValue('transform${data}Z', player) + getSubmodValue('transform${data}Z-a', player);
 		
+		if (obj is Note)
+		{
+			pos.x += getSubmodValue('noteX', player) + getSubmodValue('note${data}X', player);
+			pos.y += getSubmodValue('noteY', player) + getSubmodValue('note${data}Y', player);
+			pos.z += getSubmodValue('noteZ', player) + getSubmodValue('note${data}Z', player);
+		}
+		if (obj is StrumNote)
+		{
+			pos.x += getSubmodValue('receptorX', player) + getSubmodValue('receptor${data}X', player);
+			pos.y += getSubmodValue('receptorY', player) + getSubmodValue('receptor${data}Y', player);
+			pos.z += getSubmodValue('receptorZ', player) + getSubmodValue('receptor${data}Z', player);
+		}
+		
 		return pos;
 	}
 	
 	override function getSubmods()
 	{
-		var subMods:Array<String> = ["transformY", "transformZ", "transformX-a", "transformY-a", "transformZ-a"];
+		var subMods:Array<String> = ["transformY", "transformZ", "transformX-a", "transformY-a", "transformZ-a", 'receptorX', 'receptorY', 'receptorZ', 'noteX', 'noteY', 'noteZ'];
 		
 		var receptors = modMgr.receptors[0];
 		for (i in 0...PlayState.SONG.keys)
@@ -37,6 +50,13 @@ class TransformModifier extends NoteModifier
 			subMods.push('transform${i}X-a');
 			subMods.push('transform${i}Y-a');
 			subMods.push('transform${i}Z-a');
+			
+			subMods.push('receptor${i}X');
+			subMods.push('receptor${i}Y');
+			subMods.push('receptor${i}Z');
+			subMods.push('note${i}X');
+			subMods.push('note${i}Y');
+			subMods.push('note${i}Z');
 		}
 		return subMods;
 	}

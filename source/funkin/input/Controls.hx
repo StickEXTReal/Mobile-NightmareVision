@@ -499,12 +499,17 @@ class Controls extends FlxActionSet
 	 * 
 	 * Good for mods that have more than 4 keys, or have a custom menu that might need specified keybinds separate from the pre-existing ones.
 	 */
-	public function addCustomKey(_name:String, _keys:Array<FlxKey>):Void
+	public function addCustom(_name:String, _keys:Array<FlxKey>, _pads:Array<FlxGamepadInputID>):Void
 	{
 		final name = _name.toLowerCase();
+
 		var keys = _keys.copy();
 		while (keys.length < 2)
-			keys.push(NONE);
+	    keys.push(FlxKey.NONE);
+        			
+        var pads = _pads.copy();
+        while (pads.length < 2)
+        pads.push(FlxGamepadInputID.NONE);
 			
 		var actionNormal = new FlxActionDigital(name);
 		var actionPress = new FlxActionDigital(name + "-press");
@@ -524,7 +529,9 @@ class Controls extends FlxActionSet
 		
 		// make it bindable yo
 		ClientPrefs.addCustomKey(name, keys);
-		customBind(name, keys);
+		ClientPrefs.addCustomGamepad(name, pads);
+        customBindKey(name, keys);
+        customBindPad(name, pads);
 	}
 	
 	/**
@@ -552,24 +559,41 @@ class Controls extends FlxActionSet
 		return false;
 	}
 	
-	public function customBind(name:String, keys:Array<FlxKey>)
+	inline static function cleanKeys(keys:Array<FlxKey>):Array<FlxKey>
 	{
-		trace('binded $name to $keys');
-		
-		var copyKeys:Array<FlxKey> = keys.copy();
-		for (i in copyKeys)
-		{
-			if (i == -1) copyKeys.remove(i);
-		}
-		
-		for (_act in [name, '$name-press', '$name-release'])
-		{
-			final action = customActions.get(_act);
-			final state = _act.contains('-press') ? JUST_PRESSED : _act.contains('-release') ? JUST_RELEASED : PRESSED;
-			
-			addKeys(action, copyKeys, state);
-		}
+		return keys == null ? [] : [for (k in keys) if ((k : Int) > 0) k];
+    }
+    	
+    inline static function cleanPads(pads:Array<FlxGamepadInputID>):Array<FlxGamepadInputID>
+    {
+        return pads == null ? [] : [for (p in pads) if (p != FlxGamepadInputID.NONE) p];
+    }
+                	
+    public function customBindKey(name:String, keys:Array<FlxKey>)
+    {
+		var copyKeys = cleanKeys(keys);
+        		
+       	for (_act in [name, '$name-press', '$name-release'])
+        {
+            final action = customActions.get(_act);
+            final state = _act.contains('-press') ? JUST_PRESSED : _act.contains('-release') ? JUST_RELEASED : PRESSED;
+                                                            			
+             addKeys(action, copyKeys, state);
+        }
 	}
+
+    public function customBindPad(name:String, pads:Array<FlxGamepadInputID>, gamepadID:Int = FlxInputDeviceID.ALL)
+    {
+        var copyPads = cleanPads(pads);
+                    		
+        for (_act in [name, '$name-press', '$name-release'])
+       	{
+        	final action = customActions.get(_act);
+       		final state = _act.contains('-press') ? JUST_PRESSED : _act.contains('-release') ? JUST_RELEASED : PRESSED;
+                                                                        			
+            addButtons(action, copyPads, state, gamepadID);
+        }
+    }
 	
 	/**
 	 * Sets all actions that pertain to the binder to trigger when the supplied keys are used.
@@ -577,11 +601,7 @@ class Controls extends FlxActionSet
 	 */
 	public function bindKeys(control:Control, keys:Array<FlxKey>)
 	{
-		var copyKeys:Array<FlxKey> = keys.copy();
-		for (i in copyKeys)
-		{
-			if (i == -1) copyKeys.remove(i);
-		}
+		var copyKeys = cleanKeys(keys);
 		
 		inline forEachBound(control, (action, state) -> addKeys(action, copyKeys, state));
 	}
@@ -592,11 +612,7 @@ class Controls extends FlxActionSet
 	 */
 	public function unbindKeys(control:Control, keys:Array<FlxKey>)
 	{
-		var copyKeys:Array<FlxKey> = keys.copy();
-		for (i in copyKeys)
-		{
-			if (i == -1) copyKeys.remove(i);
-		}
+        var copyKeys = cleanKeys(keys);
 		
 		inline forEachBound(control, (action, _) -> removeKeys(action, copyKeys));
 	}
@@ -604,7 +620,7 @@ class Controls extends FlxActionSet
 	inline static function addKeys(action:FlxActionDigital, keys:Array<FlxKey>, state:FlxInputState)
 	{
 		for (key in keys)
-			if (key != -1) action.addKey(key, state);
+			if ((key : Int) > 0) action.addKey(key, state);
 	}
 	
 	static function removeKeys(action:FlxActionDigital, keys:Array<FlxKey>)
@@ -652,7 +668,7 @@ class Controls extends FlxActionSet
 				{
 					if (i.endsWith('-release') || i.endsWith('-press')) continue;
 					
-					customBind(i, keysMap.get(i));
+					customBindKey(i, keysMap.get(i));
 				}
 				
 			case Duo(true):
@@ -715,6 +731,14 @@ class Controls extends FlxActionSet
 		
 		for (control => buttons in buttonMap)
 			inline bindButtons(control, id, buttons);
+
+        final map = ClientPrefs.gamepadBinds;
+        for (i in customActions.keys())
+        {
+            if (i.endsWith('-release') || i.endsWith('-press')) continue;
+                                        			
+   			customBindPad(i, map.get(i), id);
+        }
 	}
 	
 	public function removeGamepad(deviceID:Int = FlxInputDeviceID.ALL):Void

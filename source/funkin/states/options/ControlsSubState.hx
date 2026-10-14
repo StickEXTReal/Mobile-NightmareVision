@@ -123,13 +123,13 @@ class ControlsSubState extends MusicBeatSubstate
 		
 		final group = new ControlsGroup("NOTES", NOTES_GROUP, 0);
 		controlsGroup.add(group);
+
+        final group = new ControlsGroup("UI", UI_GROUP, group.groupLastIndex);
+        controlsGroup.add(group);
 		
 		resetGamepadLabel = new Alphabet(0, 80 * group.groupLastIndex, "Reset to Default Buttons", true);
 		resetGamepadLabel.screenCenter(X);
 		add(resetGamepadLabel);
-		
-		final group = new ControlsGroup("UI", UI_GROUP, group.groupLastIndex);
-		controlsGroup.add(group);
 		
 		final group = new ControlsGroup("WINDOW", WINDOW_GROUP, group.groupLastIndex);
 		controlsGroup.add(group);
@@ -174,7 +174,7 @@ class ControlsSubState extends MusicBeatSubstate
 		optionsList = [];
 		for (group in controlsGroup)
 		{
-			if (device == Keys || group.label.text == "NOTES")
+			if (device == Keys || group.label.text == "NOTES" || group.label.text == "UI")
 			{
 				group.visible = true;
 				for (option in group.options)
