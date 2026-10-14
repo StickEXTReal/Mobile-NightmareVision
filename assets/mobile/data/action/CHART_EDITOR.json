@@ -1,0 +1,13 @@
+{
+  "buttons": [
+    { "name": "buttonV", "x": 258, "y": 495, "anchorX": "right", "anchorY": "bottom", "graphic": "v", "color": "#49A9B2", "ids": ["V"] },
+    { "name": "buttonS", "x": 132, "y": 615, "anchorX": "right", "anchorY": "bottom", "graphic": "s", "color": "#FDD6AB", "ids": ["NONE"] },
+    { "name": "buttonX", "x": 132, "y": 495, "anchorX": "right", "anchorY": "bottom", "graphic": "x", "color": "#99062D", "ids": ["X"] },
+    { "name": "buttonD", "x": 258, "y": 255, "anchorX": "right", "anchorY": "bottom", "graphic": "d", "color": "#0078FF", "ids": ["D"] },
+    { "name": "buttonC", "x": 132, "y": 375, "anchorX": "right", "anchorY": "bottom", "graphic": "c", "color": "#44FF00", "ids": ["C"] },
+    { "name": "buttonY", "x": 258, "y": 375, "anchorX": "right", "anchorY": "bottom", "graphic": "y", "color": "#4A35B9", "ids": ["Y"] },
+    { "name": "buttonZ", "x": 132, "y": 255, "anchorX": "right", "anchorY": "bottom", "graphic": "z", "color": "#CCB98E", "ids": ["Z"] },
+    { "name": "buttonB", "x": 258, "y": 135, "anchorX": "right", "anchorY": "bottom", "graphic": "b", "color": "#FFCB00", "ids": ["B"] },
+    { "name": "buttonA", "x": 132, "y": 135, "anchorX": "right", "anchorY": "bottom", "graphic": "a", "color": "#FF0000", "ids": ["A"] }
+  ]
+}
