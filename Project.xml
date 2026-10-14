@@ -13,7 +13,7 @@
 
     <define name="MODS_ALLOWED" if="desktop || mobile"/>
     <define name="VIDEOS_ALLOWED" if="cpp"/>
-    <define name="DISCORD_ALLOWED" if="cpp" unless="ios"/>
+    <define name="DISCORD_ALLOWED" if="desktop" unless="ios"/>
 
     <!-- PATH SETTINGS -->
 
